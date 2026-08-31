@@ -32,6 +32,12 @@ function scheduleReloadIfRestoreComplete(res) {
   }
 }
 
+
+function redirectToLogin() {
+  if (window.location.pathname === '/login') return;
+  window.location.assign('/login');
+}
+
 async function _refreshAccessToken() {
   if (_refreshPromise) return _refreshPromise;
   _refreshPromise = fetch(API_ROOT + '/auth/refresh', {
@@ -58,6 +64,11 @@ async function request(path, options = {}) {
     : { ...options, headers };
   const res = await fetch(API_ROOT + path, fetchOptions);
   if (res.status === 401) {
+    if (!getAccessToken() && window.location.pathname === '/login') {
+      const err = new Error('Unauthorized');
+      err.status = 401;
+      throw err;
+    }
     // Try to refresh once (all concurrent 401s share the same refresh attempt).
     try {
       const newToken = await _refreshAccessToken();
@@ -79,7 +90,7 @@ async function request(path, options = {}) {
       return retryData;
     } catch {
       // Refresh failed – redirect to login
-      window.location.href = '/login';
+      redirectToLogin();
       throw new Error('Session expired');
     }
   }
@@ -116,7 +127,7 @@ async function downloadRequest(path) {
       return res;
     } catch (e) {
       if (e.status) throw e;
-      window.location.href = '/login';
+      redirectToLogin();
       throw new Error('Session expired');
     }
   }
@@ -157,7 +168,7 @@ async function downloadPostRequest(path, data) {
       return res;
     } catch (e) {
       if (e.status) throw e;
-      window.location.href = '/login';
+      redirectToLogin();
       throw new Error('Session expired');
     }
   }
@@ -199,7 +210,7 @@ export const api = {
         }
         return retryRes.json();
       } catch {
-        window.location.href = '/login';
+        redirectToLogin();
         throw new Error('Session expired');
       }
     }
@@ -237,7 +248,7 @@ export const api = {
         }
         return retryRes.json();
       } catch {
-        window.location.href = '/login';
+        redirectToLogin();
         throw new Error('Session expired');
       }
     }

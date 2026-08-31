@@ -127,7 +127,7 @@ async def office365_authorize(
         "scope": " ".join(OFFICE365_SCOPES),
         "response_mode": "query",
         "state": state_data,
-        "prompt": "consent",
+        "prompt": "select_account",
     }
     url = f"{authority}/oauth2/v2.0/authorize?{urllib.parse.urlencode(params)}"
     return RedirectResponse(url)
